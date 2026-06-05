@@ -149,6 +149,7 @@ async def on_message(message):
 @bot.event
 async def on_ready():
     await bot.load_extension("extras")
+    await bot.load_extension("tawtheeq")
     await bot.tree.sync()
     print(f"✅ البوت شغالة: {bot.user}")
 
