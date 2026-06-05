@@ -41,8 +41,8 @@ class ReplyModal(discord.ui.Modal, title="🪽 ردي على الرسالة"):
         required=True
     )
 
-    def init(self, sender_id):
-        super().init()
+    def __init__(self, sender_id):
+        super().__init__()
         self.sender_id = sender_id
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -76,8 +76,8 @@ class ReplyModal(discord.ui.Modal, title="🪽 ردي على الرسالة"):
             await interaction.followup.send("🪽 ما قدرت أرسل الرد!", ephemeral=True)
 
 class ReplyButton(discord.ui.View):
-    def init(self, sender_id):
-        super().init(timeout=None)
+    def __init__(self, sender_id):
+        super().__init__(timeout=None)
         self.sender_id = sender_id
 
     @discord.ui.button(label="ردي على الرسالة", style=discord.ButtonStyle.secondary, custom_id="reply_button")
@@ -87,7 +87,7 @@ class ReplyButton(discord.ui.View):
 class AnonModal(discord.ui.Modal, title="🪽 رسالة مجهولة"):
     target = discord.ui.TextInput(
         label="يوزرنيم المرسل إليه",
-        placeholder="مثال: adrianos أو @adrianos",
+        placeholder="مثال: noni أو @noni",
         required=True
     )
     message = discord.ui.TextInput(
@@ -95,24 +95,20 @@ class AnonModal(discord.ui.Modal, title="🪽 رسالة مجهولة"):
         style=discord.TextStyle.long,
         placeholder="اكتبي رسالتك هنا...",
         required=True
-    )async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
+    )
 
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         username = self.target.value.strip().lstrip("@")
         member = discord.utils.find(
             lambda m: m.name.lower() == username.lower() or m.display_name.lower() == username.lower(),
             interaction.guild.members
-        )
-
-        if not member:
+        )if not member:
             await interaction.followup.send("🪽 ما لقيت العضو، تأكدي من اليوزرنيم!", ephemeral=True)
             return
-
         if member == interaction.user:
             await interaction.followup.send("🪽 ما تقدرين ترسلين لنفسك!", ephemeral=True)
             return
-
-        # إيمبد الرسالة المجهولة
         embed = discord.Embed(
             title=config["message_embed"]["title"],
             description=config["message_embed"]["description"],
@@ -122,12 +118,9 @@ class AnonModal(discord.ui.Modal, title="🪽 رسالة مجهولة"):
         embed.set_footer(text="Dev by adrianos")
         if config["message_embed"].get("image"):
             embed.set_image(url=config["message_embed"]["image"])
-
         try:
             await member.send(embed=embed, view=ReplyButton(interaction.user.id))
             await interaction.followup.send("🪽 تم إرسال رسالتك!", ephemeral=True)
-
-            # لوق الرسالة في الروم السري
             log_channel = interaction.client.get_channel(LOG_CHANNEL_ID)
             if log_channel:
                 log_embed = discord.Embed(title="🪽 رسالة مجهولة جديدة", color=0xc9b1ff)
@@ -140,9 +133,6 @@ class AnonModal(discord.ui.Modal, title="🪽 رسالة مجهولة"):
         except:
             await interaction.followup.send("🪽 ما قدرت أرسل، العضو مغلق خاصه!", ephemeral=True)
 
-# =====================
-# زر الإرسال
-# =====================
 class AnonButton(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -151,9 +141,6 @@ class AnonButton(discord.ui.View):
     async def anon_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(AnonModal())
 
-# =====================
-# أوامر الأدمن
-# =====================
 class Anonymous(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -180,7 +167,8 @@ class Anonymous(commands.Cog):
             config["button_embed"]["title"] = title
         if description:
             config["button_embed"]["description"] = description
-        if color:config["button_embed"]["color"] = int(color.strip("#"), 16)
+        if color:
+            config["button_embed"]["color"] = int(color.strip("#"), 16)
         if image:
             config["button_embed"]["image"] = image
         save_config(config)
@@ -189,8 +177,7 @@ class Anonymous(commands.Cog):
     @app_commands.command(name="set-message-embed", description="عدلي على إيمبد الرسالة")
     @app_commands.checks.has_permissions(administrator=True)
     async def set_message_embed(self, interaction: discord.Interaction, title: str = None, description: str = None, color: str = None, image: str = None):
-        if title:
-            config["message_embed"]["title"] = title
+        if title:config["message_embed"]["title"] = title
         if description:
             config["message_embed"]["description"] = description
         if color:
