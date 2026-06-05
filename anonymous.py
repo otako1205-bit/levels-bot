@@ -1,4 +1,101 @@
-async def on_submit(self, interaction: discord.Interaction):
+import discord
+from discord.ext import commands
+from discord import app_commands
+import json
+import os
+from datetime import datetime
+
+CONFIG_FILE = "anon_config.json"
+LOG_CHANNEL_ID = 1512381066776674436
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            return json.load(f)
+    return {
+        "button_embed": {
+            "title": "🪽 رسالة مجهولة",
+            "description": "اضغطي الزر عشان ترسلين رسالة مجهولة لأي عضو!",
+            "color": 0xc9b1ff,
+            "image": None
+        },
+        "message_embed": {
+            "title": "🪽 رسالة مجهولة",
+            "description": "وصلتك رسالة مجهولة!",
+            "color": 0xc9b1ff,
+            "image": None
+        }
+    }
+
+def save_config(config):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
+
+config = load_config()
+
+class ReplyModal(discord.ui.Modal, title="🪽 ردي على الرسالة"):
+    reply = discord.ui.TextInput(
+        label="ردك",
+        style=discord.TextStyle.long,
+        placeholder="اكتبي ردك هنا...",
+        required=True
+    )
+
+    def init(self, sender_id):
+        super().init()
+        self.sender_id = sender_id
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        sender = interaction.client.get_user(self.sender_id)
+        if not sender:
+            await interaction.followup.send("🪽 ما قدرت أرسل الرد!", ephemeral=True)
+            return
+        embed = discord.Embed(
+            title="🪽 رد على رسالتك المجهولة",
+            description=config["message_embed"]["description"],
+            color=config["message_embed"]["color"]
+        )
+        embed.add_field(name="الرد", value=self.reply.value, inline=False)
+        embed.set_footer(text="Dev by adrianos")
+        if config["message_embed"].get("image"):
+            embed.set_image(url=config["message_embed"]["image"])
+        try:
+            await sender.send(embed=embed)
+            await interaction.followup.send("🪽 تم إرسال ردك!", ephemeral=True)
+            log_channel = interaction.client.get_channel(LOG_CHANNEL_ID)
+            if log_channel:
+                log_embed = discord.Embed(title="🪽 رد على رسالة مجهولة", color=0xc9b1ff)
+                log_embed.add_field(name="الراد", value=f"{interaction.user} ({interaction.user.id})", inline=False)
+                log_embed.add_field(name="المرسل إليه", value=f"{sender} ({sender.id})", inline=False)
+                log_embed.add_field(name="الرد", value=self.reply.value, inline=False)
+                log_embed.add_field(name="الوقت", value=datetime.now().strftime("%Y-%m-%d %H:%M:%S"), inline=False)
+                log_embed.set_footer(text="Dev by adrianos")
+                await log_channel.send(embed=log_embed)
+        except:
+            await interaction.followup.send("🪽 ما قدرت أرسل الرد!", ephemeral=True)
+
+class ReplyButton(discord.ui.View):
+    def init(self, sender_id):
+        super().init(timeout=None)
+        self.sender_id = sender_id
+
+    @discord.ui.button(label="ردي على الرسالة", style=discord.ButtonStyle.secondary, custom_id="reply_button")
+    async def reply_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(ReplyModal(self.sender_id))
+
+class AnonModal(discord.ui.Modal, title="🪽 رسالة مجهولة"):
+    target = discord.ui.TextInput(
+        label="يوزرنيم المرسل إليه",
+        placeholder="مثال: adrianos أو @adrianos",
+        required=True
+    )
+    message = discord.ui.TextInput(
+        label="الرسالة",
+        style=discord.TextStyle.long,
+        placeholder="اكتبي رسالتك هنا...",
+        required=True
+    )async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
 
         username = self.target.value.strip().lstrip("@")
