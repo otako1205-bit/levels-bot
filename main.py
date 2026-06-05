@@ -152,4 +152,4 @@ async def on_ready():
     print(f"✅ البوت شغالة: {bot.user}")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-bot.run(TOKEN
+bot.run(TOKEN)
