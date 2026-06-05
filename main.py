@@ -119,6 +119,7 @@ async def top(ctx):
 @bot.event
 async def on_message(message):
     if message.author.bot or not data["enabled"]:
+        await bot.process_commands(message)
         return
 
     uid = str(message.author.id)
@@ -148,10 +149,14 @@ async def on_message(message):
 
 @bot.event
 async def on_ready():
-    await bot.load_extension("extras")
-    await bot.load_extension("tawtheeq")
-    await bot.tree.sync()
-    print(f"✅ البوت شغالة: {bot.user}")
+    try:
+        await bot.load_extension("extras")
+        await bot.load_extension("tawtheeq")
+        await bot.tree.sync()
+        print(f"✅ البوت شغالة: {bot.user}")
+    except Exception as e:
+        print(f"❌ خطأ في التحميل: {e}")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
+
